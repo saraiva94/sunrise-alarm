@@ -1,79 +1,90 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Alarme Solar
 
-# Getting Started
+Aplicativo mobile que agenda alarmes com base no horario do nascer do sol da sua cidade.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## Sobre
 
-## Step 1: Start the Metro Server
+O Alarme Solar e um app React Native que resolve um problema simples: acordar no horario certo para ver o nascer do sol. O usuario informa sua localizacao (por cidade, estado ou CEP) e o app consulta uma API de dados astronomicos para calcular o horario exato do nascer do sol, agendando notificacoes com antecedencia configuravel.
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+Alem do alarme solar, o app oferece desafios cognitivos e fisicos para garantir que o usuario realmente acordou (problemas matematicos, jogos de memoria e contagem de passos via acelerometro), alertas inteligentes de sono que notificam 90, 60 e 30 minutos antes do horario ideal de dormir, e um sistema de ranking entre usuarios baseado em sequencia de dias com alarme ativo.
 
-To start Metro, run the following command from the _root_ of your React Native project:
+## Stack
+
+| Camada | Tecnologia | Proposito |
+|--------|------------|-----------|
+| Runtime | React Native 0.73 + TypeScript 5.0 | Framework mobile multiplataforma |
+| Navegacao | React Navigation 7 (Native Stack) | Roteamento com stacks condicionais por estado de auth |
+| Backend | Supabase (Auth + Database + Storage) | Autenticacao, persistencia de dados e armazenamento de midia |
+| Estado global | React Context + useReducer | Auth, subscription e theme como providers; formularios complexos via reducer |
+| Estado servidor | TanStack React Query 5 | Cache e sincronizacao de dados remotos |
+| Notificacoes | Notifee | Agendamento com AlarmManager, full-screen intents e canais Android |
+| Audio | react-native-sound | Reproducao de sons locais e remotos com bypass de modo silencioso (iOS) |
+| Sensores | react-native-sensors | Leitura de acelerometro para contagem de passos |
+| Midia | react-native-youtube-iframe + WebView | Player de YouTube, Vimeo, video/audio direto e uploads Supabase |
+| Localizacao | Geolocation + Nominatim + ViaCEP | GPS nativo, geocodificacao reversa e busca por CEP |
+| Monetizacao | react-native-iap | Assinaturas via Google Play Billing |
+| Validacao | Zod 4 | Schemas declarativos com validacao cross-field |
+| Estilizacao | NativeWind 4 (Tailwind) + StyleSheet | Utility-first styling com fallback para StyleSheet nativo |
+
+## Funcionalidades
+
+- Alarme baseado no horario real do nascer do sol para qualquer cidade brasileira
+- Alarme manual com horario customizado
+- Antecipacao configuravel (acordar X minutos antes do nascer do sol)
+- Tres tipos de desafio para desligar o alarme: matematica, memoria e contagem de passos
+- Tres niveis de dificuldade por desafio (facil, medio, dificil)
+- Alertas inteligentes de sono (90, 60 e 30 minutos antes do horario de dormir)
+- Suporte a midia no alarme: YouTube, YouTube Shorts, Vimeo, video direto, audio direto e uploads
+- 6 sons de alarme embutidos com preview antes de selecionar
+- Busca de localizacao por cidade/estado, CEP ou GPS do dispositivo
+- Ranking de usuarios por sequencia de dias com alarme ativo
+- Perfil com vinculacao de redes sociais (Instagram, Twitter/X, TikTok)
+- Sistema de assinaturas com tiers: free, trial, monthly, yearly e premium
+- Painel administrativo com controle de usuarios (acesso por role ou email)
+- Slide-to-unlock para desligar o alarme
+- Vibracoes customizadas por tipo de alarme
+- Deep linking para fluxos de OAuth e reset de senha
+
+## Arquitetura
+
+O app usa stacks condicionais no React Navigation: se o usuario nao esta autenticado, apenas as telas de Auth e ResetPassword sao montadas; ao autenticar, o stack principal substitui o anterior sem navegacao manual. O estado de autenticacao e resolvido em tres camadas simultaneas (listener de sessao, handler de deep link e chamada sincrona de getSession) para evitar flash de tela errada em cold start. Formularios complexos como o de criacao de alarme consolidam mais de 20 campos em um unico useReducer com actions tipadas. O tratamento de notificacoes usa persistencia dupla (memoria + AsyncStorage) para garantir que alarmes disparados em background, foreground ou cold start sempre naveguem para a tela correta. Servicos externos (sunrise API, Nominatim, ViaCEP, Supabase) ficam isolados em modulos dentro de `src/services/`, sem acoplamento com componentes de UI.
+
+## Como rodar localmente
+
+### Pre-requisitos
+
+- Node.js >= 18
+- JDK 17
+- Android SDK (compileSdk 35, buildTools 35.0.0)
+- Android Studio ou emulador Android configurado
+- React Native CLI
+
+### Passos
 
 ```bash
-# using npm
+# 1. Clonar o repositorio
+git clone <url-do-repositorio>
+cd SunriseAlarmRN
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Criar arquivo de variaveis de ambiente
+cp .env.example .env
+# Preencher as variaveis no .env (ver secao abaixo)
+
+# 4. Iniciar o Metro Bundler
 npm start
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
-
-```bash
-# using npm
+# 5. Em outro terminal, rodar no Android
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### For iOS
+## Variaveis de ambiente
 
-```bash
-# using npm
-npm run ios
+Crie um arquivo `.env` na raiz do projeto com as seguintes variaveis:
 
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+| Variavel | Descricao |
+|----------|-----------|
+| `SUPABASE_URL` | URL do projeto Supabase |
+| `SUPABASE_ANON_KEY` | Chave publica (anon) do Supabase |

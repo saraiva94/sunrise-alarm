@@ -88,3 +88,34 @@ Crie um arquivo `.env` na raiz do projeto com as seguintes variaveis:
 |----------|-----------|
 | `SUPABASE_URL` | URL do projeto Supabase |
 | `SUPABASE_ANON_KEY` | Chave publica (anon) do Supabase |
+
+## Configuracao da Edge Function verify-purchase
+
+A Edge Function `verify-purchase` valida receipts de assinatura com a Google Play Developer API antes de ativar o premium no Supabase.
+
+### 1. Adicionar coluna purchase_token na tabela profiles
+
+```sql
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS purchase_token text;
+```
+
+### 2. Configurar o secret da Google Service Account
+
+No Google Cloud Console do seu projeto:
+1. Vá em **IAM & Admin > Service Accounts**
+2. Crie (ou use) uma service account com a role **Android Publisher**
+3. Gere uma chave JSON para essa service account
+4. No Google Play Console, va em **Settings > API access** e vincule o projeto GCP
+
+Depois, configure o secret no Supabase:
+
+```bash
+# Copie o conteudo do arquivo JSON da service account
+supabase secrets set GOOGLE_SERVICE_ACCOUNT_KEY='{"type":"service_account","project_id":"...","private_key":"...","client_email":"...",...}'
+```
+
+### 3. Deploy da Edge Function
+
+```bash
+supabase functions deploy verify-purchase --project-ref qfceadbmjlwjqryjzbcc
+```

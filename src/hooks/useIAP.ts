@@ -7,11 +7,33 @@ import {
   purchaseErrorListener,
   purchaseUpdatedListener,
   requestSubscription,
+  type Purchase,
 } from 'react-native-iap';
 import {supabase} from '@/integrations/supabase/client';
 import {useAuth} from '@/hooks/useAuth';
 
 const SUBSCRIPTION_ID = 'sunrise_alarm_premium_monthly';
+
+async function verifyAndActivate(
+  purchase: Purchase,
+  userId: string,
+): Promise<void> {
+  const {data, error} = await supabase.functions.invoke('verify-purchase', {
+    body: {
+      purchaseToken: purchase.purchaseToken,
+      productId: purchase.productId,
+      userId,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message ?? 'Erro ao verificar compra');
+  }
+
+  if (!data?.valid) {
+    throw new Error('Compra inválida ou expirada');
+  }
+}
 
 export function useIAP() {
   const {user} = useAuth();
@@ -26,20 +48,16 @@ export function useIAP() {
     const purchaseUpdate = purchaseUpdatedListener(async purchase => {
       if (purchase.productId !== SUBSCRIPTION_ID) return;
 
-      await finishTransaction({purchase, isConsumable: false});
+      if (!user) return;
 
-      // Atualizar subscription no Supabase
-      if (user) {
-        const endsAt = new Date();
-        endsAt.setMonth(endsAt.getMonth() + 1);
+      try {
+        // FIX 1 & 2 & 3: Validar receipt via Edge Function ANTES de finalizar a transação
+        await verifyAndActivate(purchase, user.id);
 
-        await supabase
-          .from('profiles')
-          .update({
-            subscription_tier: 'premium',
-            subscription_ends_at: endsAt.toISOString(),
-          })
-          .eq('id', user.id);
+        // Só finaliza a transação após confirmação do servidor
+        await finishTransaction({purchase, isConsumable: false});
+      } catch (err: any) {
+        setError(err.message ?? 'Erro ao processar compra');
       }
     });
 
@@ -72,19 +90,12 @@ export function useIAP() {
 
     try {
       const purchases = await getAvailablePurchases();
-      const hasPremium = purchases.some(p => p.productId === SUBSCRIPTION_ID);
+      const premiumPurchase = purchases.find(
+        p => p.productId === SUBSCRIPTION_ID,
+      );
 
-      if (hasPremium && user) {
-        const endsAt = new Date();
-        endsAt.setMonth(endsAt.getMonth() + 1);
-
-        await supabase
-          .from('profiles')
-          .update({
-            subscription_tier: 'premium',
-            subscription_ends_at: endsAt.toISOString(),
-          })
-          .eq('id', user.id);
+      if (premiumPurchase && user) {
+        await verifyAndActivate(premiumPurchase, user.id);
       }
     } catch (err: any) {
       setError(err.message ?? 'Erro ao restaurar compras');

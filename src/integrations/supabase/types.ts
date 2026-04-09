@@ -107,6 +107,7 @@ export type Database = {
           id: string
           instagram_handle: string | null
           main_purpose: string | null
+          purchase_token: string | null
           subscription_ends_at: string | null
           subscription_tier: string | null
           tiktok_handle: string | null
@@ -121,6 +122,7 @@ export type Database = {
           id: string
           instagram_handle?: string | null
           main_purpose?: string | null
+          purchase_token?: string | null
           subscription_ends_at?: string | null
           subscription_tier?: string | null
           tiktok_handle?: string | null
@@ -135,6 +137,7 @@ export type Database = {
           id?: string
           instagram_handle?: string | null
           main_purpose?: string | null
+          purchase_token?: string | null
           subscription_ends_at?: string | null
           subscription_tier?: string | null
           tiktok_handle?: string | null
